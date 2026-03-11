@@ -1,0 +1,129 @@
+:root {
+  color-scheme: light dark;
+}
+
+body {
+  font-family: var(--vscode-font-family);
+  color: var(--vscode-foreground);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--vscode-editor-background) 92%, #c6d69d 8%), var(--vscode-editor-background));
+  margin: 0;
+}
+
+main {
+  padding: 12px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.subtitle {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.search {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--vscode-input-border, transparent);
+  background: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border-radius: 8px;
+  padding: 10px 12px;
+  outline: none;
+}
+
+.search:focus {
+  border-color: var(--vscode-focusBorder);
+}
+
+.meta {
+  margin: 10px 0 12px;
+  font-size: 12px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.card {
+  border: 1px solid color-mix(in srgb, var(--vscode-panel-border) 75%, transparent);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--vscode-editor-background) 88%, #f4e3b1 12%);
+  padding: 10px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.name {
+  font-weight: 700;
+}
+
+.kind {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+}
+
+.orthography {
+  margin: 8px 0 6px;
+  font-size: 14px;
+}
+
+.definition {
+  margin: 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.location {
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+button {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  cursor: pointer;
+  background: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+button.secondary {
+  background: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.empty {
+  border: 1px dashed var(--vscode-panel-border);
+  border-radius: 12px;
+  padding: 14px;
+  line-height: 1.5;
+}

@@ -1,0 +1,124 @@
+{
+  "name": "vscodetupy",
+  "displayName": "VSCode Tupy",
+  "description": "VS Code support for Tupi corpus transcription files ending in .tu.py.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.88.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:tupy",
+    "onCommand:tupy.refreshIndex",
+    "onCommand:tupy.insertDefinitionSkeleton",
+    "onView:tupy.lexiconView"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "tupy.refreshIndex",
+        "title": "Tupy: Refresh Lexicon Index"
+      },
+      {
+        "command": "tupy.insertDefinitionSkeleton",
+        "title": "Tupy: Insert Definition Skeleton"
+      }
+    ],
+    "languages": [
+      {
+        "id": "tupy",
+        "aliases": [
+          "Tupy Python",
+          "tupy"
+        ],
+        "extensions": [
+          ".tu.py"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "tupy",
+        "scopeName": "source.tupy",
+        "path": "./syntaxes/tupy.tmGrammar.json"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "tupySidebar",
+          "title": "Tupy",
+          "icon": "media/tupy.svg"
+        }
+      ]
+    },
+    "views": {
+      "tupySidebar": [
+        {
+          "id": "tupy.lexiconView",
+          "name": "Lexicon Search",
+          "type": "webview"
+        }
+      ]
+    },
+    "menus": {
+      "view/title": [
+        {
+          "command": "tupy.refreshIndex",
+          "when": "view == tupy.lexiconView",
+          "group": "navigation"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Tupy",
+      "properties": {
+        "tupy.enablePythonEvaluation": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Execute trusted `.tu.py` files with Python to derive orthographic forms for complex top-level assignments such as composed expressions."
+        },
+        "tupy.pythonInterpreter": {
+          "type": "string",
+          "default": "python3",
+          "description": "Python interpreter used for runtime lexicon extraction."
+        },
+        "tupy.pythonEvaluationTimeoutMs": {
+          "type": "number",
+          "default": 5000,
+          "minimum": 500,
+          "description": "Timeout in milliseconds for Python-based lexicon extraction."
+        },
+        "tupy.enableExpressionHints": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show faint evaluation hints above the current line when the caret is on or immediately after a closing `)` in a trusted `.tu.py` file."
+        },
+        "tupy.expressionHintMaxLength": {
+          "type": "number",
+          "default": 240,
+          "minimum": 60,
+          "description": "Maximum total visible character length for wrapped expression hints."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package --allow-missing-repository"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.47",
+    "@types/vscode": "^1.88.0",
+    "@vscode/vsce": "latest",
+    "typescript": "^5.8.3"
+  }
+}

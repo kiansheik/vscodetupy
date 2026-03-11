@@ -1,0 +1,120 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Tupy Python",
+  "scopeName": "source.tupy",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#keywords" },
+    { "include": "#constructors" },
+    { "include": "#decorators" },
+    { "include": "#assignments" },
+    { "include": "#functionCalls" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.number-sign.python",
+          "match": "#.*$"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.python",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.python",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.python",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.python",
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "patterns": [
+        {
+          "name": "constant.numeric.python",
+          "match": "\\b\\d+(?:\\.\\d+)?\\b"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.python",
+          "match": "\\b(?:and|as|assert|async|await|break|class|continue|def|del|elif|else|except|finally|for|from|if|import|in|is|lambda|not|or|pass|raise|return|try|while|with|yield)\\b"
+        },
+        {
+          "name": "constant.language.python",
+          "match": "\\b(?:False|None|True)\\b"
+        }
+      ]
+    },
+    "constructors": {
+      "patterns": [
+        {
+          "name": "support.class.tupy",
+          "match": "\\b(?:Adverb|Conjunction|Interjection|Noun|Postposition|ProperNoun|Verb)\\b"
+        }
+      ]
+    },
+    "decorators": {
+      "patterns": [
+        {
+          "name": "meta.annotation.python",
+          "match": "@[\\p{L}_][\\p{L}\\p{N}_]*"
+        }
+      ]
+    },
+    "assignments": {
+      "patterns": [
+        {
+          "captures": {
+            "1": {
+              "name": "entity.name.variable.tupy"
+            }
+          },
+          "match": "^\\s*([\\p{L}_][\\p{L}\\p{N}_]*)\\s*(?==)"
+        }
+      ]
+    },
+    "functionCalls": {
+      "patterns": [
+        {
+          "captures": {
+            "1": {
+              "name": "entity.name.function.python"
+            }
+          },
+          "match": "\\b([\\p{L}_][\\p{L}\\p{N}_]*)\\s*(?=\\()"
+        }
+      ]
+    },
+    "operators": {
+      "patterns": [
+        {
+          "name": "keyword.operator.python",
+          "match": "<<|>>|==|!=|<=|>=|:=|[-+*/%&|^~<>]=?|\\b(?:and|or|not)\\b"
+        }
+      ]
+    }
+  }
+}

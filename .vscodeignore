@@ -1,0 +1,6 @@
+.vscode/**
+src/**
+examples/**
+tsconfig.json
+Makefile
+.gitignore

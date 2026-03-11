@@ -168,7 +168,7 @@ enein = Interjection("ene'ĩ")
 îeruré = Verb("îeruré")
 erobak = Verb("erobak")
 aec = Adverb("a'e")
-jatf = cop() * (jesus == (pyra * (mombeu / katu))) * (nde * membyra)
+jatf = (cop() * (jesus == (pyra * (mombeu / katu))) * (nde * membyra))
 syk = Verb("syk")
 nheraneym = Noun("nherane'yma")
 erekó = Verb("erekó")
@@ -179,7 +179,7 @@ christo = ProperNoun("Christo")
 enõî = Verb("enõî")
 îekosub = Verb("îekosub")
 eikatu = Verb("'ikatu")
-tt = tupan == tuba
+tt = (tupan == tuba)
 oîepebae = Noun("oîepeba'e", definition="unique, only one")
 pitangin = Noun("pitang˜i")
 
@@ -264,7 +264,7 @@ araujo_catecismo_1686 = [
     << ((+oré * îaseo) + (pupé * ((ikód * ybytygûaîa) == (saba * îaseo)))),
     enein + (sara * ((esé * oré) + (îeruré))).voc(),
     ((eboûing * (nde * (esá / poraûsubara))) * (+endé * erobak.imp())) + (oré * koty),
-    (aec)
+    ((aec)
     + (
         (iré * (syk * (ikód * (pûera * (saba * (pea * îe))))))
         >> ((jatf * (+endé * (epîak / ukar))).imp() + orébe)
@@ -273,7 +273,7 @@ araujo_catecismo_1686 = [
     * (nheraneym.voc())
     * ((sara * v(poreaûsuberekó)).voc())
     * ((bae * v(een)).voc())
-    * virgem_maria.voc(),  # fix absoluta m
+    * virgem_maria.voc()),  # fix absoluta m
     ((cop() * santamaria * (tupan * sy)) + (v(angaturama).perm() * +oré) << ne)
     + (esé * (pûera * (emi * (christo * enõî))))
     + (
@@ -297,10 +297,10 @@ araujo_catecismo_1686 = [
             )
         )
     ),
-    (aebae * ar) + (suí * (cop() * (maria) * (ababykagûereyma))),
+    (aebae * ar) + (suí * (cop() * (maria) * (ababykagûereyma))),(
     (ponciopilato * ((amo * morubixaba) >> (ikó)))
-    >> ((amo * (pyra * (erekó / memûã))) + (+aebae * ikó)),
-    (esé * (ybyrá / îoasaba))
+    >> ((amo * (pyra * (erekó / memûã))) + (+aebae * (ikó)))),
+    ((esé * (ybyrá / îoasaba))
     + (amo * (pyra * moîar) + (ikó * +aebae))
     + (amo * (pyra * îuká))
     + (amo * (pyra * tym) + (ikó * +aebae)),
@@ -316,12 +316,12 @@ araujo_catecismo_1686 = [
             * (+jesus * (ekomonhang))
         )
     )
-    + ne,
-    +ixé * erobîar * espirito_santo,
+    + ne),
+    (+ixé * erobîar * espirito_santo,
     +ixé * erobîar * santa_igreja,
     +ixé
     * erobîar
-    * (((santos * (ikó / katu)).base_nominal(True) * (mo * îaok) * îe).redup()),
+    * (((santos * (ikó / katu)).base_nominal(True) * (mo * îaok) * îe).redup())),
 ]
 
 if __name__ == "__main__":
