@@ -10,7 +10,13 @@ interface RuntimeLexiconPayload {
 
 interface ExpressionHintPayload {
   hint?: string;
+  translationPrompt?: string;
   error?: string;
+}
+
+export interface ExpressionHintResult {
+  hint: string;
+  translationPrompt?: string;
 }
 
 interface RuntimeLexiconEntry {
@@ -19,6 +25,7 @@ interface RuntimeLexiconEntry {
   orthography: string;
   definition?: string;
   line: number;
+  source_path?: string;
 }
 
 export class PythonLexiconEvaluator {
@@ -62,12 +69,12 @@ export class PythonLexiconEvaluator {
       }
 
       return payload.entries.map((entry) => ({
-        id: `${uri.toString()}::${entry.name}::${entry.line}`,
+        id: `${(entry.source_path ? vscode.Uri.file(entry.source_path) : uri).toString()}::${entry.name}::${entry.line}`,
         name: entry.name,
         kind: entry.kind,
         orthography: entry.orthography,
         definition: entry.definition,
-        uri,
+        uri: entry.source_path ? vscode.Uri.file(entry.source_path) : uri,
         line: entry.line
       }));
     } catch (error) {
@@ -80,7 +87,7 @@ export class PythonLexiconEvaluator {
   async evaluateExpressionHint(
     document: vscode.TextDocument,
     closePosition: vscode.Position
-  ): Promise<string | undefined> {
+  ): Promise<ExpressionHintResult | undefined> {
     if (!this.isEnabled() || document.uri.scheme !== 'file') {
       return undefined;
     }
@@ -92,6 +99,8 @@ export class PythonLexiconEvaluator {
 
     const interpreter = configuration.get<string>('pythonInterpreter', 'python3').trim() || 'python3';
     const timeout = Math.max(500, configuration.get<number>('pythonEvaluationTimeoutMs', 5000) ?? 5000);
+    const translationLanguage =
+      configuration.get<string>('translationPromptLanguage', 'English')?.trim() || 'English';
 
     try {
       const stdout = await execFile(
@@ -100,7 +109,8 @@ export class PythonLexiconEvaluator {
           this.hintHelperPath,
           document.uri.fsPath,
           String(closePosition.line + 1),
-          String(closePosition.character)
+          String(closePosition.character),
+          translationLanguage
         ],
         {
           cwd: path.dirname(document.uri.fsPath),
@@ -109,7 +119,15 @@ export class PythonLexiconEvaluator {
         }
       );
       const payload = JSON.parse(stdout) as ExpressionHintPayload;
-      return payload.hint?.trim() || undefined;
+      const hint = payload.hint?.trim();
+      if (!hint) {
+        return undefined;
+      }
+
+      return {
+        hint,
+        translationPrompt: payload.translationPrompt?.trim() || undefined
+      };
     } catch {
       return undefined;
     }

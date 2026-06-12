@@ -16,6 +16,7 @@
     "onLanguage:tupy",
     "onCommand:tupy.refreshIndex",
     "onCommand:tupy.insertDefinitionSkeleton",
+    "onCommand:tupy.moveStandaloneDefinitionsToLexicon",
     "onView:tupy.lexiconView"
   ],
   "main": "./dist/extension.js",
@@ -28,6 +29,10 @@
       {
         "command": "tupy.insertDefinitionSkeleton",
         "title": "Tupy: Insert Definition Skeleton"
+      },
+      {
+        "command": "tupy.moveStandaloneDefinitionsToLexicon",
+        "title": "Tupy: Move Standalone Definitions To Lexicon"
       }
     ],
     "languages": [
@@ -106,6 +111,16 @@
           "default": 240,
           "minimum": 60,
           "description": "Maximum total visible character length for wrapped expression hints."
+        },
+        "tupy.translationPromptLanguage": {
+          "type": "string",
+          "default": "English",
+          "description": "Language name passed to Predicate.translation_prompt(...) when opening an AI translation prompt from an expression hint."
+        },
+        "tupy.lexiconFile": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to the canonical lexicon file. Relative paths are resolved from the workspace root."
         }
       }
     }

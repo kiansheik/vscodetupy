@@ -36,8 +36,14 @@ export class WorkspaceLexicon {
   }
 
   getAllEntries(): LexiconEntry[] {
-    return Array.from(this.entriesByUri.values())
-      .flat()
+    const deduped = new Map<string, LexiconEntry>();
+    for (const entry of Array.from(this.entriesByUri.values()).flat()) {
+      if (!deduped.has(entry.id)) {
+        deduped.set(entry.id, entry);
+      }
+    }
+
+    return Array.from(deduped.values())
       .sort((left, right) => {
         const orthographyCompare = left.orthography.localeCompare(right.orthography);
         if (orthographyCompare !== 0) {

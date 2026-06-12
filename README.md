@@ -63,6 +63,8 @@ jatf = cop() * (jesus == (pyra * (mombeu / katu))) * (nde * membyra)
 
 The runtime extractor resolves that value and indexes its evaluated surface form.
 
+It also indexes imported `Predicate` instances that come from the `pydicate` package, so built-in globals such as `ixé`, `xe`, `saba`, and `supé` are available in both lexicon search and inline `var.` completion even when they are not assigned in the current `.tu.py` file.
+
 This layer is controlled by three settings:
 
 - `tupy.enablePythonEvaluation`
@@ -80,6 +82,8 @@ Inside `.tu.py` files the extension offers completion items for:
 - inline lexicon search using `var.<free text query>`
 
 The completion detail shows the constructor kind and orthographic form.
+
+Hovering a known lexical variable also shows its kind, rendered form, definition, and source location.
 
 The inline search syntax is meant to reduce sidebar dependence during transcription:
 
@@ -106,6 +110,8 @@ The hint always renders in a dedicated phantom line above the current line so it
 
 Longer hints are wrapped into multiple lines rather than shortened aggressively, using an estimated width budget around half the editor width.
 
+If the selected `)` is also the end of an assignment value such as `l += ...`, the hint prefers the full right-hand side even when there is no explicit outer wrapping parenthesis around the whole expression.
+
 The hint is transient:
 
 - it appears only while the caret is at that closing scope
@@ -113,11 +119,33 @@ The hint is transient:
 - it uses the current editor buffer, so saved and unsaved edits are both considered
 - it only appears when the current buffer is valid Python and workspace trust is enabled
 - it uses the editor CodeLens UI, so `editor.codeLens` must be enabled
+- clicking the hint asks the evaluated object for `translation_prompt(...)`, opens VS Code chat, and submits that prompt automatically when the built-in chat commands are available
 
 This layer is controlled by:
 
 - `tupy.enableExpressionHints`
 - `tupy.expressionHintMaxLength`
+- `tupy.translationPromptLanguage`
+
+If the built-in VS Code chat commands are unavailable, the extension falls back to opening the OpenAI sidebar and copying the translation prompt to the clipboard.
+
+### Move Definitions
+
+When you define new lexicon items inline while drafting a text, you can move them into the canonical lexicon with:
+
+- `Tupy: Move Standalone Definitions To Lexicon`
+
+The command:
+
+- finds top-level `name = ...` definitions in the current `.tu.py` file
+- skips transcription lines such as `l += ...`
+- appends the definitions to the lexicon file before `__all__`
+- removes those definitions from the current file
+- saves both files and refreshes the lexicon index
+
+The target lexicon file is inferred from `from ...lexicon import load_lexicon` when possible. You can also set it explicitly with:
+
+- `tupy.lexiconFile`
 
 ### Side panel search
 
@@ -152,9 +180,11 @@ new_entry = Noun("orthography", definition="")
 │   ├── view.css             # Lexicon sidebar styling
 │   └── view.js              # Lexicon sidebar client script
 ├── scripts/
+│   ├── evaluate_expression_hint.py # Python helper for scoped eval hints and translation prompts
 │   └── extract_runtime_lexicon.py  # Python helper for runtime surface-form extraction
 ├── src/
 │   ├── extension.ts         # Activation, commands, completions, webview wiring
+│   ├── expressionHints.ts   # Transient scoped eval hints above the active line
 │   ├── indexer.ts           # Workspace lexicon indexing and search
 │   ├── parser.ts            # Parser for constructor-style assignments
 │   ├── runtimePython.ts     # Python subprocess bridge for runtime enrichment

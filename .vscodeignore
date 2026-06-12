@@ -1,6 +1,8 @@
 .vscode/**
 src/**
 examples/**
+**/__pycache__/**
+**/*.pyc
 tsconfig.json
 Makefile
 .gitignore

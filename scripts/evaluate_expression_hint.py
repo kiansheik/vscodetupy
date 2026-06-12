@@ -156,6 +156,47 @@ def expression_range(module: ast.AST, source: str, open_offset: int, close_offse
     return candidates[0]["range"]
 
 
+def node_range(node, lines, offsets):
+    if not hasattr(node, "lineno") or not hasattr(node, "end_lineno"):
+        return None
+
+    start = ast_offset_for(lines, offsets, node.lineno, node.col_offset)
+    end = ast_offset_for(lines, offsets, node.end_lineno, node.end_col_offset)
+    return start, end
+
+
+def containing_statement_index(module: ast.Module, target_range, lines, offsets):
+    for index, statement in enumerate(module.body):
+        statement_range = node_range(statement, lines, offsets)
+        if not statement_range:
+            continue
+
+        if statement_range[0] <= target_range[0] and statement_range[1] >= target_range[1]:
+            return index
+
+    return len(module.body)
+
+
+def statement_value_range_for_close(module: ast.Module, close_offset: int, lines, offsets):
+    for statement in module.body:
+        value = None
+        if isinstance(statement, ast.Assign):
+            value = statement.value
+        elif isinstance(statement, ast.AnnAssign):
+            value = statement.value
+        elif isinstance(statement, ast.AugAssign):
+            value = statement.value
+
+        if value is None:
+            continue
+
+        value_range = node_range(value, lines, offsets)
+        if value_range and value_range[1] == close_offset + 1:
+            return value_range
+
+    return None
+
+
 def is_call_like_open(source: str, open_offset: int):
     index = open_offset - 1
     while index >= 0 and source[index].isspace():
@@ -194,14 +235,46 @@ def compact(text: str):
     return " ".join(text.split())
 
 
+def translation_prompt(value, target_lang: str):
+    builder = getattr(value, "translation_prompt", None)
+    if not callable(builder):
+        return None
+
+    try:
+        prompt = builder(target_lang)
+    except TypeError:
+        try:
+            prompt = builder(target_lang=target_lang)
+        except Exception:
+            return None
+    except Exception:
+        return None
+
+    if prompt is None:
+        return None
+
+    return str(prompt).strip()
+
+
+def execute_prelude(module: ast.Module, stop_index: int, file_path: Path, namespace):
+    for statement in module.body[:stop_index]:
+        wrapper = ast.Module(body=[statement], type_ignores=[])
+        ast.fix_missing_locations(wrapper)
+        try:
+            exec(compile(wrapper, str(file_path), "exec"), namespace)
+        except Exception:
+            continue
+
+
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         sys.stdout.write(json.dumps({"hint": None, "error": "usage"}))
         return 1
 
     file_path = Path(sys.argv[1]).resolve()
     close_line = int(sys.argv[2])
     close_col = int(sys.argv[3])
+    target_lang = sys.argv[4] or "English"
     source = sys.stdin.read()
 
     sys_path_candidates(file_path)
@@ -218,6 +291,10 @@ def main():
         sys.stdout.write(json.dumps({"hint": None}))
         return 0
 
+    statement_value_range = statement_value_range_for_close(module, close_offset, lines, offsets)
+    if statement_value_range and statement_value_range[0] < expr_range[0]:
+        expr_range = statement_value_range
+
     expression = source[expr_range[0] : expr_range[1]]
     package_name = definition_package(file_path)
     namespace = {
@@ -225,15 +302,25 @@ def main():
         "__file__": str(file_path),
         "__package__": package_name or None,
     }
+    stop_index = containing_statement_index(module, expr_range, lines, offsets)
 
     captured_stdout = io.StringIO()
     captured_stderr = io.StringIO()
     with contextlib.redirect_stdout(captured_stdout), contextlib.redirect_stderr(captured_stderr):
-        exec(compile(source, str(file_path), "exec"), namespace)
+        execute_prelude(module, stop_index, file_path, namespace)
         value = eval(compile(expression, str(file_path), "eval"), namespace)
 
     hint = surface_form(value)
-    sys.stdout.write(json.dumps({"hint": compact(hint) if hint else None}, ensure_ascii=False))
+    prompt = translation_prompt(value, target_lang)
+    sys.stdout.write(
+        json.dumps(
+            {
+                "hint": compact(hint) if hint else None,
+                "translationPrompt": prompt,
+            },
+            ensure_ascii=False,
+        )
+    )
     return 0
 
 
@@ -241,5 +328,5 @@ if __name__ == "__main__":
     try:
         raise SystemExit(main())
     except Exception:
-        sys.stdout.write(json.dumps({"hint": None}, ensure_ascii=False))
+        sys.stdout.write(json.dumps({"hint": None, "translationPrompt": None}, ensure_ascii=False))
         raise SystemExit(0)

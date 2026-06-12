@@ -3,12 +3,13 @@ import { isTupyDocument } from './indexer';
 import { PythonLexiconEvaluator } from './runtimePython';
 
 const HINT_DEBOUNCE_MS = 150;
-const HINT_NOOP_COMMAND = 'tupy.expressionHintNoop';
+const HINT_ACTION_COMMAND = 'tupy.openExpressionTranslation';
 
 interface ActiveHint {
   documentUri: string;
   line: number;
   text: string;
+  translationPrompt?: string;
 }
 
 export class ExpressionHintController
@@ -44,8 +45,16 @@ export class ExpressionHintController
     return [
       new vscode.CodeLens(line.range, {
         title: this.activeHint.text,
-        command: HINT_NOOP_COMMAND,
-        tooltip: 'Evaluated surface form'
+        command: HINT_ACTION_COMMAND,
+        tooltip: this.activeHint.translationPrompt
+          ? 'Open AI chat with a translation prompt for this expression'
+          : 'Evaluated surface form',
+        arguments: [
+          {
+            prompt: this.activeHint.translationPrompt,
+            title: this.activeHint.text
+          }
+        ]
       })
     ];
   }
@@ -90,7 +99,8 @@ export class ExpressionHintController
     this.updateHint({
       documentUri: editor.document.uri.toString(),
       line: context.closePosition.line,
-      text: formatHint(editor, hint)
+      text: formatHint(editor, hint.hint),
+      translationPrompt: hint.translationPrompt
     });
   }
 
@@ -109,7 +119,7 @@ export class ExpressionHintController
     return vscode.workspace.getConfiguration('tupy').get<boolean>('enableExpressionHints', true);
   }
 
-  static readonly noopCommand = HINT_NOOP_COMMAND;
+  static readonly actionCommand = HINT_ACTION_COMMAND;
 }
 
 function closingParenContext(
@@ -177,5 +187,10 @@ function sameHint(left: ActiveHint | undefined, right: ActiveHint | undefined): 
     return left === right;
   }
 
-  return left.documentUri === right.documentUri && left.line === right.line && left.text === right.text;
+  return (
+    left.documentUri === right.documentUri &&
+    left.line === right.line &&
+    left.text === right.text &&
+    left.translationPrompt === right.translationPrompt
+  );
 }
