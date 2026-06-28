@@ -17,6 +17,7 @@
     "onCommand:tupy.refreshIndex",
     "onCommand:tupy.insertDefinitionSkeleton",
     "onCommand:tupy.moveStandaloneDefinitionsToLexicon",
+    "onCommand:tupy.openSourceAuthoringPrompt",
     "onView:tupy.lexiconView"
   ],
   "main": "./dist/extension.js",
@@ -33,6 +34,10 @@
       {
         "command": "tupy.moveStandaloneDefinitionsToLexicon",
         "title": "Tupy: Move Standalone Definitions To Lexicon"
+      },
+      {
+        "command": "tupy.openSourceAuthoringPrompt",
+        "title": "Tupy: Start Human-Led Source Authoring"
       }
     ],
     "languages": [
