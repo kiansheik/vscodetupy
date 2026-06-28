@@ -26,9 +26,40 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   await lexicon.initialize();
 
   const viewProvider = new TupyLexiconViewProvider(context.extensionUri, lexicon);
+  let inlineQuerySuggestTimer: ReturnType<typeof setTimeout> | undefined;
+  const scheduleInlineQuerySuggest = (editor = vscode.window.activeTextEditor): void => {
+    if (!editor || !isTupyDocument(editor.document)) {
+      return;
+    }
+
+    if (!varQueryContext(editor.document, editor.selection.active)) {
+      return;
+    }
+
+    if (inlineQuerySuggestTimer) {
+      clearTimeout(inlineQuerySuggestTimer);
+    }
+
+    inlineQuerySuggestTimer = setTimeout(() => {
+      inlineQuerySuggestTimer = undefined;
+      const activeEditor = vscode.window.activeTextEditor;
+      if (!activeEditor || !isTupyDocument(activeEditor.document)) {
+        return;
+      }
+
+      if (varQueryContext(activeEditor.document, activeEditor.selection.active)) {
+        void vscode.commands.executeCommand('editor.action.triggerSuggest');
+      }
+    }, 25);
+  };
 
   context.subscriptions.push(
     output,
+    new vscode.Disposable(() => {
+      if (inlineQuerySuggestTimer) {
+        clearTimeout(inlineQuerySuggestTimer);
+      }
+    }),
     expressionHints,
     vscode.languages.registerCodeLensProvider({ language: 'tupy' }, expressionHints),
     vscode.languages.registerHoverProvider({ language: 'tupy' }, new TupyHoverProvider(lexicon)),
@@ -66,6 +97,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     }),
     vscode.window.onDidChangeTextEditorSelection((event) => {
       expressionHints.schedule(event.textEditor);
+      scheduleInlineQuerySuggest(event.textEditor);
     }),
     vscode.workspace.onDidOpenTextDocument((document) => {
       if (isTupyDocument(document)) {
@@ -90,6 +122,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         void lexicon.refreshDocument(event.document, { includeRuntime: false });
         if (vscode.window.activeTextEditor?.document === event.document) {
           expressionHints.schedule(vscode.window.activeTextEditor);
+          scheduleInlineQuerySuggest(vscode.window.activeTextEditor);
         }
       }
     }),

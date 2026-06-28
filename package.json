@@ -123,6 +123,11 @@
           "description": "Optional path to the canonical lexicon file. Relative paths are resolved from the workspace root."
         }
       }
+    },
+    "configurationDefaults": {
+      "[tupy]": {
+        "editor.inlineSuggest.suppressSuggestions": false
+      }
     }
   },
   "scripts": {
