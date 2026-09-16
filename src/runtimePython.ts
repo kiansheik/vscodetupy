@@ -92,7 +92,8 @@ export class PythonLexiconEvaluator {
 
   async evaluateExpressionHint(
     document: vscode.TextDocument,
-    closePosition: vscode.Position
+    closePosition: vscode.Position,
+    sourceOverride?: string
   ): Promise<ExpressionHintResult | undefined> {
     if (!this.isEnabled() || document.uri.scheme !== 'file') {
       return undefined;
@@ -121,7 +122,7 @@ export class PythonLexiconEvaluator {
         {
           cwd: path.dirname(document.uri.fsPath),
           timeout,
-          input: document.getText()
+          input: sourceOverride ?? document.getText()
         }
       );
       const payload = JSON.parse(stdout) as ExpressionHintPayload;
@@ -205,7 +206,7 @@ function delay(milliseconds: number): Promise<void> {
   });
 }
 
-function execFile(
+export function execFile(
   command: string,
   args: string[],
   options: { cwd: string; timeout: number; input?: string }

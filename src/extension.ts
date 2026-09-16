@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { ExpressionHintController } from './expressionHints';
+import { GroundTruthStatusController } from './groundTruthStatus';
 import { WorkspaceLexicon, isTupyDocument } from './indexer';
 import { PythonLexiconEvaluator } from './runtimePython';
 import { escapeSnippet, normalizeForSearch, suggestIdentifier } from './text';
@@ -23,6 +24,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   const pythonEvaluator = new PythonLexiconEvaluator(context.extensionUri, output);
   const lexicon = new WorkspaceLexicon(pythonEvaluator);
   const expressionHints = new ExpressionHintController(pythonEvaluator);
+  const groundTruthStatus = new GroundTruthStatusController(context.extensionUri, output);
   await lexicon.initialize();
 
   const viewProvider = new TupyLexiconViewProvider(context.extensionUri, lexicon);
@@ -61,7 +63,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       }
     }),
     expressionHints,
+    groundTruthStatus,
     vscode.languages.registerCodeLensProvider({ language: 'tupy' }, expressionHints),
+    vscode.languages.registerCodeLensProvider({ language: 'tupy' }, groundTruthStatus),
     vscode.languages.registerHoverProvider({ language: 'tupy' }, new TupyHoverProvider(lexicon)),
     vscode.window.registerWebviewViewProvider('tupy.lexiconView', viewProvider),
     vscode.languages.registerCompletionItemProvider(
@@ -86,18 +90,22 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       if (event.affectsConfiguration('tupy')) {
         void lexicon.initialize();
         expressionHints.schedule();
+        groundTruthStatus.schedule();
       }
     }),
     vscode.workspace.onDidGrantWorkspaceTrust(() => {
       void lexicon.initialize();
       expressionHints.schedule();
+      groundTruthStatus.schedule();
     }),
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       expressionHints.schedule(editor);
+      groundTruthStatus.schedule(editor);
     }),
     vscode.window.onDidChangeTextEditorSelection((event) => {
       expressionHints.schedule(event.textEditor);
       scheduleInlineQuerySuggest(event.textEditor);
+      groundTruthStatus.refreshCodeLenses();
     }),
     vscode.workspace.onDidOpenTextDocument((document) => {
       if (isTupyDocument(document)) {
@@ -106,6 +114,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         });
         if (vscode.window.activeTextEditor?.document === document) {
           expressionHints.schedule(vscode.window.activeTextEditor);
+          groundTruthStatus.schedule(vscode.window.activeTextEditor);
         }
       }
     }),
@@ -114,6 +123,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         void lexicon.refreshDocument(document, { includeRuntime: document.uri.scheme === 'file' });
         if (vscode.window.activeTextEditor?.document === document) {
           expressionHints.schedule(vscode.window.activeTextEditor);
+          groundTruthStatus.schedule(vscode.window.activeTextEditor);
         }
       }
     }),
@@ -123,6 +133,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         if (vscode.window.activeTextEditor?.document === event.document) {
           expressionHints.schedule(vscode.window.activeTextEditor);
           scheduleInlineQuerySuggest(vscode.window.activeTextEditor);
+          groundTruthStatus.schedule(vscode.window.activeTextEditor);
         }
       }
     }),
@@ -137,6 +148,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
   );
 
   expressionHints.schedule(vscode.window.activeTextEditor);
+  groundTruthStatus.schedule(vscode.window.activeTextEditor);
 }
 
 export function deactivate(): void {
