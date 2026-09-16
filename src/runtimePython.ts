@@ -28,6 +28,9 @@ interface RuntimeLexiconEntry {
   source_path?: string;
 }
 
+const AUTHORING_CHAT_OPEN_COMMAND = 'workbench.action.chat.open';
+const AUTHORING_CHAT_SUBMIT_COMMAND = 'workbench.action.chat.submit';
+
 export class PythonLexiconEvaluator {
   private readonly lexiconHelperPath: string;
   private readonly hintHelperPath: string;
@@ -38,6 +41,9 @@ export class PythonLexiconEvaluator {
   ) {
     this.lexiconHelperPath = vscode.Uri.joinPath(extensionUri, 'scripts', 'extract_runtime_lexicon.py').fsPath;
     this.hintHelperPath = vscode.Uri.joinPath(extensionUri, 'scripts', 'evaluate_expression_hint.py').fsPath;
+    vscode.commands.registerCommand('tupy.openSourceAuthoringPrompt', async () => {
+      await openSourceAuthoringPrompt();
+    });
   }
 
   isEnabled(): boolean {
@@ -86,7 +92,8 @@ export class PythonLexiconEvaluator {
 
   async evaluateExpressionHint(
     document: vscode.TextDocument,
-    closePosition: vscode.Position
+    closePosition: vscode.Position,
+    sourceOverride?: string
   ): Promise<ExpressionHintResult | undefined> {
     if (!this.isEnabled() || document.uri.scheme !== 'file') {
       return undefined;
@@ -115,7 +122,7 @@ export class PythonLexiconEvaluator {
         {
           cwd: path.dirname(document.uri.fsPath),
           timeout,
-          input: document.getText()
+          input: sourceOverride ?? document.getText()
         }
       );
       const payload = JSON.parse(stdout) as ExpressionHintPayload;
@@ -134,7 +141,72 @@ export class PythonLexiconEvaluator {
   }
 }
 
-function execFile(
+async function openSourceAuthoringPrompt(): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || !editor.document.uri.path.endsWith('.tu.py')) {
+    vscode.window.showInformationMessage('Open a .tu.py source file before starting an authoring task.');
+    return;
+  }
+
+  const source = await vscode.window.showInputBox({
+    prompt: 'Historic source name',
+    placeHolder: 'araujo_catecismo_1686'
+  });
+  if (!source?.trim()) {
+    return;
+  }
+  const recordId = await vscode.window.showInputBox({
+    prompt: 'Ground-truth record id or ordinal',
+    placeHolder: '104 or araujo_catecismo_1686:0104'
+  });
+  if (!recordId?.trim()) {
+    return;
+  }
+
+  const file = vscode.workspace.asRelativePath(editor.document.uri, false);
+  const selected = editor.document.getText(editor.selection).trim();
+  const prompt = [
+    'Work as a human-led Old Tupi corpus authoring assistant.',
+    `Active source file: ${file}`,
+    `Historic source: ${source.trim()}`,
+    `Ground-truth record: ${recordId.trim()}`,
+    selected ? `Selected candidate or context:\n${selected}` : 'No expression is selected.',
+    '',
+    'First use the oldtupi-authoring MCP tools get_source_context, search_lexicon, and search_rendered_expressions.',
+    'Then propose a candidate Pydicate expression, alternatives where relevant, a short grammatical analysis, and a render_candidate check.',
+    'Do not modify any source, target record, nhe-enga code, or ground truth until I explicitly approve the analysis.',
+    'Do not treat a rendered match as proof of the historical analysis.'
+  ].join('\n');
+
+  const commands = new Set(await vscode.commands.getCommands(true));
+  if (commands.has(AUTHORING_CHAT_OPEN_COMMAND)) {
+    try {
+      await vscode.commands.executeCommand(AUTHORING_CHAT_OPEN_COMMAND, {
+        mode: 'agent',
+        query: prompt,
+        isPartialQuery: true
+      });
+      if (commands.has(AUTHORING_CHAT_SUBMIT_COMMAND)) {
+        await delay(75);
+        await vscode.commands.executeCommand(AUTHORING_CHAT_SUBMIT_COMMAND);
+      }
+      return;
+    } catch {
+      // The prompt remains useful through the clipboard fallback.
+    }
+  }
+
+  await vscode.env.clipboard.writeText(prompt);
+  vscode.window.showInformationMessage('Source authoring prompt copied to the clipboard.');
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, milliseconds);
+  });
+}
+
+export function execFile(
   command: string,
   args: string[],
   options: { cwd: string; timeout: number; input?: string }

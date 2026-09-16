@@ -17,6 +17,9 @@
     "onCommand:tupy.refreshIndex",
     "onCommand:tupy.insertDefinitionSkeleton",
     "onCommand:tupy.moveStandaloneDefinitionsToLexicon",
+    "onCommand:tupy.openSourceAuthoringPrompt",
+    "onCommand:tupy.correctGroundTruthLine",
+    "onCommand:tupy.commitGroundTruthLine",
     "onView:tupy.lexiconView"
   ],
   "main": "./dist/extension.js",
@@ -33,6 +36,18 @@
       {
         "command": "tupy.moveStandaloneDefinitionsToLexicon",
         "title": "Tupy: Move Standalone Definitions To Lexicon"
+      },
+      {
+        "command": "tupy.openSourceAuthoringPrompt",
+        "title": "Tupy: Start Human-Led Source Authoring"
+      },
+      {
+        "command": "tupy.correctGroundTruthLine",
+        "title": "Tupy: Correct Ground Truth For Current Line"
+      },
+      {
+        "command": "tupy.commitGroundTruthLine",
+        "title": "Tupy: Commit Ground Truth For Current Line"
       }
     ],
     "languages": [
@@ -80,6 +95,18 @@
           "when": "view == tupy.lexiconView",
           "group": "navigation"
         }
+      ],
+      "editor/context": [
+        {
+          "command": "tupy.correctGroundTruthLine",
+          "when": "editorLangId == tupy",
+          "group": "tupy@1"
+        },
+        {
+          "command": "tupy.commitGroundTruthLine",
+          "when": "editorLangId == tupy",
+          "group": "tupy@2"
+        }
       ]
     },
     "configuration": {
@@ -121,6 +148,16 @@
           "type": "string",
           "default": "",
           "description": "Optional path to the canonical lexicon file. Relative paths are resolved from the workspace root."
+        },
+        "tupy.enableGroundTruthStatus": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Show a light per-line marker on tracked historic sources: verified against ground truth, not yet accounted for, or present but failing verification. Requires the sibling `oldtupicorpus` checkout and refreshes on save."
+        },
+        "tupy.corpusPath": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to the oldtupicorpus checkout used for ground-truth verification. Defaults to a sibling ../oldtupicorpus directory, or an ancestor of the open file that contains an authoring/service.py package. Relative paths are resolved from the workspace root."
         }
       }
     },

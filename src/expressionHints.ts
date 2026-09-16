@@ -75,18 +75,18 @@ export class ExpressionHintController
       return;
     }
 
-    const context = closingParenContext(editor.document, editor.selection.active);
+    const context = getHintContext(editor.document, editor.selection.active);
     if (!context) {
       this.updateHint(undefined);
       return;
     }
 
-    const hint = await this.evaluator.evaluateExpressionHint(editor.document, context.closePosition);
+    const hint = await this.evaluator.evaluateExpressionHint(editor.document, context.closePosition, context.modifiedSource);
     if (requestId !== this.requestId || vscode.window.activeTextEditor !== editor) {
       return;
     }
 
-    const refreshedContext = closingParenContext(editor.document, editor.selection.active);
+    const refreshedContext = getHintContext(editor.document, editor.selection.active);
     if (
       !hint ||
       !refreshedContext ||
@@ -122,10 +122,15 @@ export class ExpressionHintController
   static readonly actionCommand = HINT_ACTION_COMMAND;
 }
 
+interface HintContext {
+  closePosition: vscode.Position;
+  modifiedSource?: string;
+}
+
 function closingParenContext(
   document: vscode.TextDocument,
   position: vscode.Position
-): { closePosition: vscode.Position } | undefined {
+): HintContext | undefined {
   const line = document.lineAt(position.line).text;
 
   if (position.character < line.length && line[position.character] === ')') {
@@ -137,6 +142,74 @@ function closingParenContext(
   }
 
   return undefined;
+}
+
+function findAssignmentRhsStart(lineText: string): number | undefined {
+  for (let i = 0; i < lineText.length; i++) {
+    if (lineText[i] !== '=') {
+      continue;
+    }
+    if (lineText[i + 1] === '=') {
+      i++;
+      continue;
+    }
+    if (i > 0 && '!<>='.includes(lineText[i - 1])) {
+      continue;
+    }
+    let start = i + 1;
+    while (start < lineText.length && lineText[start] === ' ') {
+      start++;
+    }
+    return start;
+  }
+  return undefined;
+}
+
+function assignmentLineEndContext(
+  document: vscode.TextDocument,
+  position: vscode.Position
+): HintContext | undefined {
+  const lineText = document.lineAt(position.line).text;
+
+  if (
+    position.character !== lineText.length ||
+    lineText.length === 0 ||
+    lineText[lineText.length - 1] !== ' '
+  ) {
+    return undefined;
+  }
+
+  const rhsStart = findAssignmentRhsStart(lineText);
+  if (rhsStart === undefined) {
+    return undefined;
+  }
+
+  const rhsEnd = lineText.trimEnd().length;
+  if (rhsEnd <= rhsStart) {
+    return undefined;
+  }
+
+  const rhsStartOffset = document.offsetAt(new vscode.Position(position.line, rhsStart));
+  const rhsEndOffset = document.offsetAt(new vscode.Position(position.line, rhsEnd));
+  const fullText = document.getText();
+  const modifiedSource =
+    fullText.slice(0, rhsStartOffset) +
+    '(' +
+    fullText.slice(rhsStartOffset, rhsEndOffset) +
+    ')' +
+    fullText.slice(rhsEndOffset);
+
+  return {
+    closePosition: new vscode.Position(position.line, rhsEnd + 1),
+    modifiedSource
+  };
+}
+
+function getHintContext(
+  document: vscode.TextDocument,
+  position: vscode.Position
+): HintContext | undefined {
+  return closingParenContext(document, position) ?? assignmentLineEndContext(document, position);
 }
 
 function formatHint(editor: vscode.TextEditor, hint: string): string {
